@@ -3,6 +3,9 @@ class Client
 
   def initialize (socket)
     @socket = socket
+
+    @logger = Logger.new(STDOUT)
+    @logger.level = Logger::INFO
   end
 
   def start
@@ -10,13 +13,12 @@ class Client
       loop do
         begin
           p = @socket.read_nonblock(3)
-          puts "Message recu"
           break if p.empty?
           length, opcode = p.unpack('SC')
-          puts length
-          puts opcode
           message = @socket.read_nonblock(length)
           process_message(length, opcode, message)
+        rescue EOFError
+          break
         rescue IO::WaitReadable
           IO.select([@socket])
           retry
@@ -27,11 +29,16 @@ class Client
     end
   end
 
+  def send_message (message)
+    length = [message.length - 1]
+    @socket.write(length.pack('S') + message)
+  end
+
   def process_message(length, opcode, message)
     case opcode
     when 1 # Set username
       @username = message.unpack('A*')[0]
-      puts "Set username : " + @username
+      @logger.info '[GameServer] Set username : ' + @username
     else
       @socket.close
       @room.client_list.delete(self)
