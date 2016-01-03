@@ -27,16 +27,19 @@ class FileServer
 
         # Parse HTTP request
         room = get_room_id client_socket.gets
+        room = RoomManager.instance.get_room_by_id room.to_i
+
+        @logger.info 'test'
+        @logger.info room.song[:file]
 
         # Send the song in a new process as ruby has a Global Interpreter Lock which may lock the whole server
         Process.fork {
           begin
             unless room.nil?
-              http_string = "HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: audio/mpeg\r\n\r\n" + File.read(room.song)
+              http_string = "HTTP/1.1 200 OK\r\nConnection: Keep-Alive\r\nContent-Type: audio/mpeg\r\n\r\n" + File.read(room.song[:file])
               client_socket.write http_string
               client_socket.close
             end
-            client_socket.close
             exit(0)
           rescue Errno::EPIPE
             client_socket.close

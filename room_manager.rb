@@ -36,7 +36,7 @@ class RoomManager
   def add_client_in_room (client)
     room = find_room()
     room.client_list << client
-    puts 'add client ' + room.id.to_s
+    client.room = room
     client.send_message([2, room.id].pack('CL'))
     room.start_room unless room.started
     room
